@@ -39,6 +39,7 @@ public class InfoCommand implements DBCommand {
   private static final String DELIMITER = "\r\n";
 
   private static final String SECTION_KEYSPACE = "keyspace";
+  private static final String SECTION_MODULES = "modules";
   private static final String SECTION_COMMANDSTATS = "commandstats";
   private static final String SECTION_CPU = "cpu";
   private static final String SECTION_STATS = "stats";
@@ -79,7 +80,7 @@ public class InfoCommand implements DBCommand {
   private List<String> allSections() {
     return asList(SECTION_SERVER, SECTION_REPLICATION, SECTION_CLIENTS,
         SECTION_MEMORY, SECTION_PERSISTENCE, SECTION_STATS, SECTION_CPU,
-        SECTION_COMMANDSTATS, SECTION_KEYSPACE);
+        SECTION_MODULES, SECTION_COMMANDSTATS, SECTION_KEYSPACE);
   }
 
   private Map<String, String> section(String section, ServerContext ctx) {
@@ -102,6 +103,8 @@ public class InfoCommand implements DBCommand {
       return commandstats(ctx);
     case SECTION_KEYSPACE:
       return keyspace(ctx);
+    case SECTION_MODULES:
+      return modules(ctx);
     default:
       break;
     }
@@ -161,6 +164,11 @@ public class InfoCommand implements DBCommand {
   }
 
   private Map<String, String> keyspace(ServerContext ctx) {
+    // TODO:
+    return map();
+  }
+
+  private Map<String, String> modules(ServerContext ctx) {
     // TODO:
     return map();
   }
