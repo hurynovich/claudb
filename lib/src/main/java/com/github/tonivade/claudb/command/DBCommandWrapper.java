@@ -91,7 +91,11 @@ public class DBCommandWrapper implements RespCommand {
   }
 
   private RedisToken executeDBCommand(Database db, Request request) {
-    return ((DBCommand) command).execute(db, request);
+    try {
+      return ((DBCommand) command).execute(db, request);
+    } catch (CommandException e) {
+      return error("ERR " + e.getMessage());
+    }
   }
 
   private void enqueueRequest(Request request) {
