@@ -18,7 +18,7 @@ import com.github.tonivade.resp.protocol.RedisToken;
 
 @FunctionalInterface
 public interface DBCommand {
-  RedisToken execute(Database db, Request request);
+  RedisToken execute(Database db, Request request) throws CommandException;
 
   default DBServerContext getClauDB(ServerContext server) {
     return (DBServerContext) server;
@@ -33,7 +33,7 @@ public interface DBCommand {
   }
 
   default DBSessionState getSessionState(Session session) {
-    return sessionState(session).orElseThrow(() -> new IllegalStateException("missiong session state"));
+    return sessionState(session).orElseThrow(() -> new IllegalStateException("missing session state"));
   }
 
   default Optional<DBServerState> serverState(ServerContext server) {
