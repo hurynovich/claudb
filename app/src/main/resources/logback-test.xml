@@ -1,0 +1,33 @@
+<!-- Intended for development and should not be included in the final artifact -->
+<configuration>
+  <!-- Below configured dedicated loggers to print commands received by the server -->
+  <appender name="REQUEST" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%cyan(%msg%n)</pattern>
+    </encoder>
+  </appender>
+  <appender name="RESPONSE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%magenta(%msg%n%n)</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="claudb.request" level="TRACE" additivity="false">
+    <appender-ref ref="REQUEST"/>
+  </logger>
+  <!-- Set "claudb.response" to TRACE level to show all responses -->
+  <logger name="claudb.response" level="ERROR" additivity="false">
+    <appender-ref ref="RESPONSE"/>
+  </logger>
+
+  <!-- Below configured traditional java loggers that follow the pattern logger per class -->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0}: %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>
