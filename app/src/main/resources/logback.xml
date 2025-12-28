@@ -6,6 +6,9 @@
     </encoder>
   </appender>
 
+  <logger name="claudb.request" level="OFF" />
+  <logger name="claudb.response" level="OFF" />
+
   <root level="${root-level:-INFO}">
     <appender-ref ref="STDOUT" />
   </root>
