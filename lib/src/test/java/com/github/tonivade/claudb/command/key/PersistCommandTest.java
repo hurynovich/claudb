@@ -27,6 +27,7 @@ public class PersistCommandTest {
             .assertThat(RedisToken.integer(true));
     }
 
+    @Test
     public void testExecuteNotExists() {
         rule.withParams("notExists", "10")
             .execute()

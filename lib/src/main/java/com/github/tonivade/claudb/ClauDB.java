@@ -5,6 +5,7 @@
 package com.github.tonivade.claudb;
 
 import static com.github.tonivade.resp.protocol.RedisToken.error;
+import static com.github.tonivade.resp.protocol.RedisTokenType.ERROR;
 import static com.github.tonivade.resp.protocol.SafeString.safeString;
 import static com.github.tonivade.resp.util.Precondition.checkNonNull;
 import static java.lang.String.valueOf;
@@ -44,6 +45,9 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
   private static final String STATE = "state";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ClauDB.class);
+  // Dedicated loggers to print request/response. It's intended to simplify development.
+  private static final Logger reqLog = LoggerFactory.getLogger("claudb.request");
+  private static final Logger respLog = LoggerFactory.getLogger("claudb.response");
 
   private DatabaseCleaner cleaner;
   private Optional<NotificationManager> notifications;
@@ -94,7 +98,7 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
 
   @Override
   public List<RedisToken> getCommandsToReplicate() {
-    return executeOn(Observable.<List<RedisToken>>create(observable -> {
+    return enqueue(Observable.<List<RedisToken>>create(observable -> {
       observable.onNext(getState().getCommandsToReplicate());
       observable.onComplete();
     })).blockingFirst();
@@ -120,7 +124,7 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
 
   @Override
   public void exportRDB(OutputStream output) {
-    executeOn(Observable.create(observable -> {
+    enqueue(Observable.create(observable -> {
       getState().exportRDB(output);
       observable.onComplete();
     })).blockingSubscribe();
@@ -128,7 +132,7 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
 
   @Override
   public void importRDB(InputStream input) {
-    executeOn(Observable.create(observable -> {
+    enqueue(Observable.create(observable -> {
       getState().importRDB(input);
       observable.onComplete();
     })).blockingSubscribe();
@@ -146,7 +150,7 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
 
   @Override
   public void clean(Instant now) {
-    executeOn(Observable.create(observable -> {
+    enqueue(Observable.create(observable -> {
       getState().evictExpired(now);
       observable.onComplete();
     })).blockingSubscribe();
@@ -154,19 +158,32 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
 
   @Override
   protected RedisToken executeCommand(RespCommand command, Request request) {
+    if (reqLog.isTraceEnabled()) {
+      StringBuilder sb = new StringBuilder(request.getCommand());
+      for (SafeString param : request.getParams()) {
+        //TODO: this is trivial implementation which will not work well for long strings
+        sb.append(' ').append(param.toString());
+      }
+      reqLog.trace(sb.toString());
+    }
     if (!isReadOnly(request.getCommand())) {
       try {
         RedisToken response = command.execute(request);
+        if (respLog.isTraceEnabled() && response.getType() != ERROR) {
+          respLog.trace(response.toString().trim()); //FIXME: fix toString() impl instead of using trim()
+        } else if (respLog.isErrorEnabled() && response.getType() == ERROR) {
+          respLog.error(response.toString().trim());
+        }
+
         replication(request);
         notification(request);
         return response;
       } catch (RuntimeException e) {
-        LOGGER.error("error executing command: " + request, e);
+        LOGGER.error("error executing command: {}", request, e);
         return error("error executing command: " + request);
       }
-    } else {
-      return error("READONLY You can't write against a read only slave");
     }
+    return error("READONLY You can't write against a read only slave");
   }
 
   private boolean isReadOnly(String command) {

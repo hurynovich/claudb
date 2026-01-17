@@ -28,18 +28,13 @@ public class SlaveOfCommand implements DBCommand {
     String host = request.getParam(0).toString();
     String port = request.getParam(1).toString();
 
-    boolean stopCurrent = "NO".equals(host) && "ONE".equals(port);
+    boolean stopCurrent = "NO".equalsIgnoreCase(host) && "ONE".equalsIgnoreCase(port);
 
-    if (slave == null) {
-      if (!stopCurrent) {
-        startReplication(request, host, port);
-      }
-    } else {
+    if (slave != null) {
       slave.stop();
-
-      if (!stopCurrent) {
-        startReplication(request, host, port);
-      }
+    }
+    if (!stopCurrent) {
+      startReplication(request, host, port);
     }
 
     return responseOk();

@@ -7,8 +7,9 @@ package com.github.tonivade.claudb.command.server;
 
 import static com.github.tonivade.resp.protocol.RedisToken.error;
 import static com.github.tonivade.resp.protocol.RedisToken.responseOk;
-import static java.lang.Integer.parseInt;
 
+import com.github.tonivade.claudb.DBConfig;
+import com.github.tonivade.claudb.command.ParamsParser;
 import com.github.tonivade.resp.annotation.Command;
 import com.github.tonivade.resp.annotation.ParamLength;
 import com.github.tonivade.resp.command.Request;
@@ -24,15 +25,12 @@ public class SelectCommand implements DBCommand {
 
   @Override
   public RedisToken execute(Database db, Request request) {
-    try {
-      getSessionState(request.getSession()).setCurrentDB(parseCurrentDB(request));
-      return responseOk();
-    } catch (NumberFormatException e) {
-      return error("ERR invalid DB index");
+    int dbIndex = new ParamsParser(request).nextInt();
+    DBConfig config = getDbConfig(request.getServerContext());
+    if (config.getNumDatabases() <= dbIndex) {
+      return error("ERR DB index is out of range");
     }
-  }
-
-  private int parseCurrentDB(Request request) {
-    return parseInt(request.getParam(0).toString());
+    getSessionState(request.getSession()).setCurrentDB(dbIndex);
+    return responseOk();
   }
 }

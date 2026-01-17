@@ -23,15 +23,7 @@ import com.github.tonivade.claudb.command.hash.HashMultiGetCommand;
 import com.github.tonivade.claudb.command.hash.HashMultiSetCommand;
 import com.github.tonivade.claudb.command.hash.HashSetCommand;
 import com.github.tonivade.claudb.command.hash.HashValuesCommand;
-import com.github.tonivade.claudb.command.key.DeleteCommand;
-import com.github.tonivade.claudb.command.key.ExistsCommand;
-import com.github.tonivade.claudb.command.key.ExpireCommand;
-import com.github.tonivade.claudb.command.key.KeysCommand;
-import com.github.tonivade.claudb.command.key.PersistCommand;
-import com.github.tonivade.claudb.command.key.RenameCommand;
-import com.github.tonivade.claudb.command.key.TimeToLiveMillisCommand;
-import com.github.tonivade.claudb.command.key.TimeToLiveSecondsCommand;
-import com.github.tonivade.claudb.command.key.TypeCommand;
+import com.github.tonivade.claudb.command.key.*;
 import com.github.tonivade.claudb.command.list.LeftPopCommand;
 import com.github.tonivade.claudb.command.list.LeftPushCommand;
 import com.github.tonivade.claudb.command.list.ListIndexCommand;
@@ -48,13 +40,7 @@ import com.github.tonivade.claudb.command.pubsub.UnsubscribeCommand;
 import com.github.tonivade.claudb.command.scripting.EvalCommand;
 import com.github.tonivade.claudb.command.scripting.EvalShaCommand;
 import com.github.tonivade.claudb.command.scripting.ScriptCommands;
-import com.github.tonivade.claudb.command.server.DatabaseSizeCommand;
-import com.github.tonivade.claudb.command.server.FlushDBCommand;
-import com.github.tonivade.claudb.command.server.InfoCommand;
-import com.github.tonivade.claudb.command.server.RoleCommand;
-import com.github.tonivade.claudb.command.server.SelectCommand;
-import com.github.tonivade.claudb.command.server.SlaveOfCommand;
-import com.github.tonivade.claudb.command.server.SyncCommand;
+import com.github.tonivade.claudb.command.server.*;
 import com.github.tonivade.claudb.command.set.SetAddCommand;
 import com.github.tonivade.claudb.command.set.SetCardinalityCommand;
 import com.github.tonivade.claudb.command.set.SetDifferenceCommand;
@@ -101,9 +87,12 @@ public class DBCommandSuite extends CommandSuite {
 
     // server
     addCommand(FlushDBCommand::new);
+    addCommand(FlushAllCommand::new);
     addCommand(InfoCommand::new);
     addCommand(RoleCommand::new);
     addCommand(DatabaseSizeCommand::new);
+    addCommand(ConfigCommand::new);
+    addCommand(AuthCommand::new);
 
     // strings
     addCommand(GetCommand::new);
@@ -129,6 +118,8 @@ public class DBCommandSuite extends CommandSuite {
     addCommand(TypeCommand::new);
     addCommand(RenameCommand::new);
     addCommand(KeysCommand::new);
+    addCommand(ScanCommand::new);
+    addCommand(HashScanCommand::new);
     addCommand(ExpireCommand::new);
     addCommand(PersistCommand::new);
     addCommand(TimeToLiveMillisCommand::new);
