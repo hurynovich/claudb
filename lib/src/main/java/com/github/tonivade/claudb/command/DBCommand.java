@@ -6,6 +6,7 @@ package com.github.tonivade.claudb.command;
 
 import java.util.Collection;
 import java.util.Optional;
+import com.github.tonivade.claudb.DBConfig;
 import com.github.tonivade.claudb.DBServerContext;
 import com.github.tonivade.claudb.DBServerState;
 import com.github.tonivade.claudb.DBSessionState;
@@ -30,6 +31,11 @@ public interface DBCommand {
 
   default DBServerState getServerState(ServerContext server) {
     return serverState(server).orElseThrow(() -> new IllegalStateException("missing server state"));
+  }
+
+  default DBConfig getDbConfig(ServerContext server) {
+    return server.<DBConfig>getValue("config")
+      .orElseThrow(() -> new IllegalStateException("missing database config"));
   }
 
   default DBSessionState getSessionState(Session session) {
