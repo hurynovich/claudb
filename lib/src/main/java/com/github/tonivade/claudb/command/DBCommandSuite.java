@@ -91,6 +91,7 @@ public class DBCommandSuite extends CommandSuite {
     addCommand(InfoCommand::new);
     addCommand(RoleCommand::new);
     addCommand(DatabaseSizeCommand::new);
+    addCommand(ConfigCommand::new);
     addCommand(AuthCommand::new);
 
     // strings
@@ -117,6 +118,8 @@ public class DBCommandSuite extends CommandSuite {
     addCommand(TypeCommand::new);
     addCommand(RenameCommand::new);
     addCommand(KeysCommand::new);
+    addCommand(ScanCommand::new);
+    addCommand(HashScanCommand::new);
     addCommand(ExpireCommand::new);
     addCommand(PersistCommand::new);
     addCommand(TimeToLiveMillisCommand::new);
