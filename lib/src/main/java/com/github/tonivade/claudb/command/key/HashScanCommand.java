@@ -5,7 +5,7 @@
 package com.github.tonivade.claudb.command.key;
 
 import com.github.tonivade.claudb.command.DBCommand;
-import com.github.tonivade.claudb.command.ParamsParser;
+import com.github.tonivade.claudb.command.ParamsScanner;
 import com.github.tonivade.claudb.command.annotation.ReadOnly;
 import com.github.tonivade.claudb.data.Database;
 import com.github.tonivade.claudb.data.DatabaseKey;
@@ -37,7 +37,7 @@ public class HashScanCommand implements DBCommand {
 
   @Override
   public RedisToken execute(Database db, Request request) {
-    ParamsParser parser = new ParamsParser(request);
+    ParamsScanner parser = new ParamsScanner(request);
     String key = parser.nextString();
     int cursor = parser.nextInt();
     GlobPattern pattern = parser.nextGlob("match", DEFAULT_PATTERN);

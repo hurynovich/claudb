@@ -7,7 +7,7 @@ package com.github.tonivade.claudb.command.server;
 
 import com.github.tonivade.claudb.DBConfig;
 import com.github.tonivade.claudb.command.DBCommand;
-import com.github.tonivade.claudb.command.ParamsParser;
+import com.github.tonivade.claudb.command.ParamsScanner;
 import com.github.tonivade.claudb.data.Database;
 import com.github.tonivade.claudb.glob.GlobPattern;
 import com.github.tonivade.resp.annotation.Command;
@@ -33,7 +33,7 @@ public class ConfigCommand implements DBCommand {
 
   @Override
   public RedisToken execute(Database db, Request request) {
-    ParamsParser params = new ParamsParser(request);
+    ParamsScanner params = new ParamsScanner(request);
     if (!params.hasNext()) {
       return error("Wrong number of arguments for 'CONFIG' command");
     }
@@ -48,7 +48,7 @@ public class ConfigCommand implements DBCommand {
     }
   }
 
-  private RedisToken doHelp(ParamsParser params) {
+  private RedisToken doHelp(ParamsScanner params) {
     if (params.hasNext()) {
       return wrongParameters(SUBCMD_HELP);
     }
@@ -61,7 +61,7 @@ public class ConfigCommand implements DBCommand {
     );
   }
 
-  private RedisToken doGet(ParamsParser params, Request request) {
+  private RedisToken doGet(ParamsScanner params, Request request) {
     GlobPattern pattern = params.nextGlob();
     if (params.hasNext()) {
       return error("wrong number of arguments for 'CONFIG' command");
