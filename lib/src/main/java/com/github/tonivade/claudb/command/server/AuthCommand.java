@@ -10,7 +10,7 @@ import static com.github.tonivade.resp.protocol.RedisToken.error;
 import static com.github.tonivade.resp.protocol.RedisToken.responseOk;
 
 /**
- * @implNote This stub implementation was added because the `Redis inside` client doesn't work without this command.
+ * ImplNote: This stub implementation was added because the `Redis inside` client doesn't work without this command.
  */
 @Command("auth")
 public class AuthCommand implements DBCommand {

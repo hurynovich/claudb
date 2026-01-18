@@ -8,6 +8,7 @@ import static com.github.tonivade.resp.protocol.RedisToken.error;
 import static com.github.tonivade.resp.protocol.RedisTokenType.ERROR;
 import static com.github.tonivade.resp.protocol.SafeString.safeString;
 import static com.github.tonivade.resp.util.Precondition.checkNonNull;
+
 import com.github.tonivade.claudb.command.DBCommandSuite;
 import com.github.tonivade.claudb.data.Database;
 import com.github.tonivade.claudb.data.DatabaseCleaner;
@@ -24,11 +25,14 @@ import com.github.tonivade.resp.command.Request;
 import com.github.tonivade.resp.command.RespCommand;
 import com.github.tonivade.resp.command.Session;
 import com.github.tonivade.resp.protocol.RedisToken;
+import com.github.tonivade.resp.protocol.SafeString;
 import com.github.tonivade.resp.util.Recoverable;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Instant;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.reactivex.rxjava3.core.Observable;
@@ -124,21 +128,19 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
       }
       reqLog.trace(sb.toString());
     }
-    if (!isReadOnly(request.getCommand())) {
-      try {
-        RedisToken response = command.execute(request);
-        if (respLog.isTraceEnabled() && response.getType() != ERROR) {
-          respLog.trace(response.toString().trim()); //FIXME: fix toString() impl instead of using trim()
-        } else if (respLog.isErrorEnabled() && response.getType() == ERROR) {
-          respLog.error(response.toString().trim());
-        }
-
-        notification(request);
-        return response;
-      } catch (RuntimeException e) {
-        LOGGER.error("error executing command: {}", request, e);
-        return error("error executing command: " + request);
+    try {
+      RedisToken response = command.execute(request);
+      if (respLog.isTraceEnabled() && response.getType() != ERROR) {
+        respLog.trace(response.toString().trim()); //FIXME: fix toString() impl instead of using trim()
+      } else if (respLog.isErrorEnabled() && response.getType() == ERROR) {
+        respLog.error(response.toString().trim());
       }
+
+      notification(request);
+      return response;
+    } catch (RuntimeException e) {
+      LOGGER.error("error executing command: {}", request, e);
+      return error("error executing command: " + request);
     }
   }
 

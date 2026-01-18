@@ -4,7 +4,12 @@ import com.github.tonivade.claudb.glob.GlobPattern;
 import com.github.tonivade.resp.command.Request;
 import com.github.tonivade.resp.protocol.SafeString;
 
+import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A utility class to parse command parameters from a {@link Request}.
@@ -41,7 +46,7 @@ public final class ParamsScanner {
    */
   public void verifyHasNext() {
     if (index >= request.getLength()) {
-      throw new CommandException("Wrong number of arguments, expected more arguments");
+      throw new CommandException("ERR Wrong number of arguments, expected more arguments");
     }
   }
 
@@ -51,7 +56,7 @@ public final class ParamsScanner {
    */
   public void verifyHasNoMore() {
     if (index < request.getLength()) {
-      throw new CommandException("Wrong number of arguments, no more arguments expected");
+      throw new CommandException("ERR Wrong number of arguments, no more arguments expected");
     }
   }
 
@@ -128,6 +133,19 @@ public final class ParamsScanner {
     return getValue(ParamsScanner::parseInt);
   }
 
+  public int nextIntOrError(String errorMsg) {
+    return wrapException(this::nextInt, errorMsg);
+  }
+
+  private <T> T wrapException(Callable<T> callable, String errorMsg) {
+    requireNonNull(errorMsg);
+    try {
+      return callable.call();
+    } catch (Exception e) {
+      throw new CommandException(errorMsg, e);
+    }
+  }
+
   /**
    * Similar as {@link #nextString(String)} but returns an integer value.
    * @see #nextString(String)
@@ -170,7 +188,7 @@ public final class ParamsScanner {
 
   private <T> T getValue(Function<SafeString, T> converter) {
     if (request.getLength() <= index) {
-      throw new CommandException("Wrong number of arguments, expected more arguments");
+      throw new CommandException("ERR Wrong number of arguments, expected more arguments");
     }
     T result = converter.apply(request.getParam(index));
     index++;
@@ -179,14 +197,14 @@ public final class ParamsScanner {
 
   private <T> T getNamedValue(String name, Function<SafeString, T> extractor) {
     if (request.getLength() <= index) {
-      throw new CommandException("Expected parameter named '" + name + "' is missing");
+      throw new CommandException("ERR Expected parameter named '" + name + "' is missing");
     }
     SafeString actualName = request.getParam(index);
     if (!name.equalsIgnoreCase(actualName.toString())) {
-      throw new CommandException("Expected parameter named '" + name + "', but found '" + actualName + "'");
+      throw new CommandException("ERR Expected parameter named '" + name + "', but found '" + actualName + "'");
     }
     if (request.getLength() <= index + 1) {
-      throw new CommandException("Value for parameter '" + name + "' is missing");
+      throw new CommandException("ERR Value for parameter '" + name + "' is missing");
     }
     T result = extractor.apply(request.getParam(index + 1));
     index += 2;
@@ -202,7 +220,7 @@ public final class ParamsScanner {
       return defValue;
     }
     if (request.getLength() <= index + 1) {
-      throw new CommandException("Value for parameter '" + name + "' is missing");
+      throw new CommandException("ERR Value for parameter '" + name + "' is missing");
     }
     T result = extractor.apply(request.getParam(index + 1));
     index += 2;
@@ -213,8 +231,7 @@ public final class ParamsScanner {
     try {
       return Integer.parseInt(str.toString());
     } catch (NumberFormatException e) {
-      throw new CommandException("Value is not an integer or out of range");
+      throw new CommandException("ERR Value is not an integer or out of range");
     }
   }
-
 }

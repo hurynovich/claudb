@@ -32,7 +32,7 @@ public class HashSetCommand implements DBCommand {
   @Override
   public RedisToken execute(Database db, Request request) {
     if (request.getLength() < 3 || request.getLength() % 2 != 1) {
-      throw new CommandException("Wrong number of arguments for 'HSET' command");
+      throw new CommandException("ERR Wrong number of arguments for 'HSET' command");
     }
 
     Map<SafeString, SafeString> value = new LinkedHashMap<>();

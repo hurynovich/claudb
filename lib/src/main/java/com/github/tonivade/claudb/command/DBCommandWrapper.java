@@ -86,7 +86,7 @@ public class DBCommandWrapper implements RespCommand {
         return executeCommand(request);
       }
     } catch (CommandException e) {
-      return error("ERR " + e.getMessage());
+      return error(e.getMessage());
     }
     return error("invalid command type: " + command.getClass());
   }
