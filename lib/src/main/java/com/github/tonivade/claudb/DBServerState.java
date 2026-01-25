@@ -44,6 +44,10 @@ public class DBServerState {
     return databases.get(id);
   }
 
+  public int getDatabasesCount() {
+    return databases.size();
+  }
+
   public void clear() {
     databases.clear();
     factory.clear();

@@ -73,7 +73,7 @@ public class ParamsScannerTest {
     assertEquals("Wrong number of arguments, no more arguments expected", ex.getMessage());
 
     someParams.nextString();
-    assertDoesNotThrow(someParams::verifyHasNoMore);
+    assertDoesNotThrow(() -> someParams.verifyHasNoMore());
   }
 
   @Test

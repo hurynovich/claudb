@@ -4,10 +4,8 @@ import com.github.tonivade.claudb.glob.GlobPattern;
 import com.github.tonivade.resp.command.Request;
 import com.github.tonivade.resp.protocol.SafeString;
 
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -54,10 +52,15 @@ public final class ParamsScanner {
    * Ensures that there are no more unprocessed parameters,
    * and throws {@link CommandException } if there are unprocessed parameters.
    */
-  public void verifyHasNoMore() {
+  public void verifyHasNoMore(String errMessage) {
+    requireNonNull(errMessage);
     if (index < request.getLength()) {
-      throw new CommandException("ERR Wrong number of arguments, no more arguments expected");
+      throw new CommandException(errMessage);
     }
+  }
+
+  public void verifyHasNoMore() {
+    verifyHasNoMore("ERR Wrong number of arguments, no more arguments expected");
   }
 
   /**

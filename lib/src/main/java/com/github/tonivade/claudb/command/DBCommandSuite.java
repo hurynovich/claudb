@@ -85,11 +85,11 @@ public class DBCommandSuite extends CommandSuite {
 
     // server
     addCommand(FlushDBCommand::new);
-//    addCommand(FlushAllCommand::new);
+    addCommand(FlushAllCommand::new);
     addCommand(InfoCommand::new);
     addCommand(RoleCommand::new);
     addCommand(DatabaseSizeCommand::new);
-//    addCommand(ConfigCommand::new);
+    addCommand(ConfigCommand::new);
     addCommand(AuthCommand::new);
 
     // strings
