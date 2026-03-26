@@ -5,9 +5,10 @@
 package com.github.tonivade.claudb;
 
 import static com.github.tonivade.resp.protocol.RedisToken.error;
+import static com.github.tonivade.resp.protocol.RedisTokenType.ERROR;
 import static com.github.tonivade.resp.protocol.SafeString.safeString;
 import static com.github.tonivade.resp.util.Precondition.checkNonNull;
-import static java.lang.String.valueOf;
+
 import com.github.tonivade.claudb.command.DBCommandSuite;
 import com.github.tonivade.claudb.data.Database;
 import com.github.tonivade.claudb.data.DatabaseCleaner;
@@ -26,14 +27,12 @@ import com.github.tonivade.resp.command.Session;
 import com.github.tonivade.resp.protocol.RedisToken;
 import com.github.tonivade.resp.protocol.SafeString;
 import com.github.tonivade.resp.util.Recoverable;
+
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.reactivex.rxjava3.core.Observable;
@@ -44,6 +43,9 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
   private static final String STATE = "state";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ClauDB.class);
+  // Dedicated loggers to print request/response. It's intended to simplify development.
+  private static final Logger reqLog = LoggerFactory.getLogger("claudb.request");
+  private static final Logger respLog = LoggerFactory.getLogger("claudb.response");
 
   private DatabaseCleaner cleaner;
   private Optional<NotificationManager> notifications;
@@ -73,8 +75,6 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
 
     init();
 
-    getState().setMaster(true);
-
     notifications.ifPresent(NotificationManager::start);
     cleaner.start();
   }
@@ -90,14 +90,6 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
     cleaner = null;
 
     super.stop();
-  }
-
-  @Override
-  public List<RedisToken> getCommandsToReplicate() {
-    return executeOn(Observable.<List<RedisToken>>create(observable -> {
-      observable.onNext(getState().getCommandsToReplicate());
-      observable.onComplete();
-    })).blockingFirst();
   }
 
   @Override
@@ -119,34 +111,8 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
   }
 
   @Override
-  public void exportRDB(OutputStream output) {
-    executeOn(Observable.create(observable -> {
-      getState().exportRDB(output);
-      observable.onComplete();
-    })).blockingSubscribe();
-  }
-
-  @Override
-  public void importRDB(InputStream input) {
-    executeOn(Observable.create(observable -> {
-      getState().importRDB(input);
-      observable.onComplete();
-    })).blockingSubscribe();
-  }
-
-  @Override
-  public boolean isMaster() {
-    return getState().isMaster();
-  }
-
-  @Override
-  public void setMaster(boolean master) {
-    getState().setMaster(master);
-  }
-
-  @Override
   public void clean(Instant now) {
-    executeOn(Observable.create(observable -> {
+    enqueue(Observable.create(observable -> {
       getState().evictExpired(now);
       observable.onComplete();
     })).blockingSubscribe();
@@ -154,31 +120,27 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
 
   @Override
   protected RedisToken executeCommand(RespCommand command, Request request) {
-    if (!isReadOnly(request.getCommand())) {
-      try {
-        RedisToken response = command.execute(request);
-        replication(request);
-        notification(request);
-        return response;
-      } catch (RuntimeException e) {
-        LOGGER.error("error executing command: " + request, e);
-        return error("error executing command: " + request);
+    if (reqLog.isTraceEnabled()) {
+      StringBuilder sb = new StringBuilder(request.getCommand());
+      for (SafeString param : request.getParams()) {
+        //TODO: this is trivial implementation which will not work well for long strings
+        sb.append(' ').append(param.toString());
       }
-    } else {
-      return error("READONLY You can't write against a read only slave");
+      reqLog.trace(sb.toString());
     }
-  }
-
-  private boolean isReadOnly(String command) {
-    return !isMaster() && !isReadOnlyCommand(command);
-  }
-
-  private void replication(Request request) {
-    if (!isReadOnlyCommand(request.getCommand())) {
-      RedisToken array = requestToArray(request);
-      if (hasSlaves()) {
-        getState().append(array);
+    try {
+      RedisToken response = command.execute(request);
+      if (respLog.isTraceEnabled() && response.getType() != ERROR) {
+        respLog.trace(response.toString().trim()); //FIXME: fix toString() impl instead of using trim()
+      } else if (respLog.isErrorEnabled() && response.getType() == ERROR) {
+        respLog.error(response.toString().trim());
       }
+
+      notification(request);
+      return response;
+    } catch (RuntimeException e) {
+      LOGGER.error("error executing command: {}", request, e);
+      return error("error executing command: " + request);
     }
   }
 
@@ -209,34 +171,6 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
     return getSessionState(request.getSession()).getCurrentDB();
   }
 
-  private RedisToken requestToArray(Request request) {
-    List<RedisToken> list = new ArrayList<>();
-    list.add(currentDbToken(request));
-    list.add(commandToken(request));
-    list.addAll(paramTokens(request));
-    return RedisToken.array(list);
-  }
-
-  private RedisToken commandToken(Request request) {
-    return RedisToken.string(request.getCommand());
-  }
-
-  private RedisToken currentDbToken(Request request) {
-    return RedisToken.string(valueOf(getCurrentDB(request)));
-  }
-
-  private int getCurrentDB(Request request) {
-    return getSessionState(request.getSession()).getCurrentDB();
-  }
-
-  private List<RedisToken> paramTokens(Request request) {
-    List<RedisToken> list = new ArrayList<>();
-    for (SafeString string : request.getParams()) {
-      list.add(RedisToken.string(string));
-    }
-    return list;
-  }
-
   private DBSessionState getSessionState(Session session) {
     return sessionState(session).orElseThrow(() -> new IllegalStateException("missing session state"));
   }
@@ -251,10 +185,6 @@ public final class ClauDB extends RespServerContext implements DBServerContext {
 
   private Optional<DBServerState> serverState() {
     return getValue(STATE);
-  }
-
-  private boolean hasSlaves() {
-    return getState().hasSlaves();
   }
 
   private DBCommandSuite getDBCommands() {

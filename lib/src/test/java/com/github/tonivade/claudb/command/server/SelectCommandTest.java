@@ -22,11 +22,11 @@ public class SelectCommandTest {
 
   @Test
   public void testExecute() {
-    rule.withParams("10")
+    rule.withParams("9")
     .execute()
     .assertThat(RedisToken.status("OK"));
 
-    assertThat(rule.getSessionState().getCurrentDB(), is(10));
+    assertThat(rule.getSessionState().getCurrentDB(), is(9));
   }
 
   @Test
